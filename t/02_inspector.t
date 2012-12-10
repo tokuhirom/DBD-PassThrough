@@ -2,7 +2,7 @@ use strict;
 use warnings;
 use utf8;
 use Test::More;
-use Test::Requires 'DBIx::Inspector';
+use Test::Requires 'DBIx::Inspector', 'DBD::SQLite';
 use DBI;
 
 sub create_dbh {
