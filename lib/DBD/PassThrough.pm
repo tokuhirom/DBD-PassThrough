@@ -81,7 +81,7 @@ our $VERSION = '0.01';
         no strict 'refs';
         *{"DBD::PassThrough::db::${meth}"} = sub {
             my $dbh = shift;
-            return $dbh->{pass_through_source}->prepare(@_);
+            return $dbh->{pass_through_source}->$meth(@_);
         };
     }
 }
