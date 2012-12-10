@@ -42,6 +42,10 @@ subtest 'STORE' => sub {
     my ($name) = $dbh->selectrow_array(q{SELECT name FROM member WHERE id=3});
     is($name, 'さいきろん');
 };
+subtest 'can_ok' => sub {
+    my $dbh = create_dbh();
+    can_ok($dbh, qw(table_info));
+};
 
 done_testing;
 

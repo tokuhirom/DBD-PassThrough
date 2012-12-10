@@ -22,8 +22,20 @@ our $VERSION = '0.01';
         $attr->{Version} ||= $VERSION;
         $attr->{Name} ||= 'PassThrough';
 
+        my %drivers = DBI->installed_drivers;
+        no strict 'refs';
+        for my $db_class (keys %drivers) {
+            my @meth = grep !/^[_A-Z]/, keys %{"DBD::${db_class}::db::"};
+            for my $meth (@meth) {
+                next if DBD::PassThrough::db->can($meth);
+                *{"DBD::PassThrough::db::${meth}"} = sub {
+                    my $dbh = shift;
+                    return $dbh->{pass_through_source}->$meth(@_);
+                };
+            }
+        }
+
         $drh->{$class} = DBI::_new_drh( $class . "::dr", $attr );
-        my $prefix = DBI->driver_prefix ($class);
         return $drh->{$class};
     }
 }
@@ -105,7 +117,7 @@ Then, it makes hard to use DBD::SQLite as a mock DB.
 
 =item But DBIx::FooBar module does not accepts $dbh.
 
-=item Then, I need DBIx::PassThrough.
+=item Then, I need DBD::PassThrough.
 
 =back
 
