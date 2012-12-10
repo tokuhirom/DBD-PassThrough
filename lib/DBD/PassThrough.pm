@@ -22,16 +22,20 @@ our $VERSION = '0.01';
         $attr->{Version} ||= $VERSION;
         $attr->{Name} ||= 'PassThrough';
 
-        my %drivers = DBI->installed_drivers;
-        no strict 'refs';
-        for my $db_class (keys %drivers) {
-            my @meth = grep !/^[_A-Z]/, keys %{"DBD::${db_class}::db::"};
-            for my $meth (@meth) {
-                next if DBD::PassThrough::db->can($meth);
-                *{"DBD::PassThrough::db::${meth}"} = sub {
-                    my $dbh = shift;
-                    return $dbh->{pass_through_source}->$meth(@_);
-                };
+        # Make delegater methods
+        # This is needed like '$dbh->func("last_insert_rowid")'
+        {
+            my %drivers = DBI->installed_drivers;
+            no strict 'refs';
+            for my $db_class (keys %drivers) {
+                my @meth = grep !/^[_A-Z]/, keys %{"DBD::${db_class}::db::"};
+                for my $meth (sort @meth) {
+                    next if DBD::PassThrough::db->can($meth);
+                    *{"DBD::PassThrough::db::${meth}"} = sub {
+                        my $dbh = shift;
+                        return $dbh->{pass_through_source}->func($meth => @_);
+                    };
+                }
             }
         }
 
@@ -72,9 +76,13 @@ our $VERSION = '0.01';
         }
         return $dbh->set_err($DBI::stderr, "Can't fetch \$dbh->{$attrib} before connect with DBD::PassThrough");
     }
-    sub prepare {
-        my $dbh = shift;
-        return $dbh->{pass_through_source}->prepare(@_);
+    # Generate methods
+    for my $meth (qw(prepare table_info get_info type_info_all type_info column_info primary_key_info primary_key foreign_key_info tables quote quote_identifier)) {
+        no strict 'refs';
+        *{"DBD::PassThrough::db::${meth}"} = sub {
+            my $dbh = shift;
+            return $dbh->{pass_through_source}->prepare(@_);
+        };
     }
 }
 

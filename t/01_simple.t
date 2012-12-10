@@ -9,7 +9,7 @@ use DBI;
 sub create_dbh {
     my $orig_dbh = DBI->connect('dbi:SQLite::memory:', '', '', {RaiseError => 1});
     my $dbh = DBI->connect('dbi:PassThrough:', '', '', {pass_through_source => $orig_dbh});
-    $dbh->do(q{CREATE TABLE member (id integer, name)}) or die $dbh->errstr;
+    $dbh->do(q{CREATE TABLE member (id integer not null primary key, name)}) or die $dbh->errstr;
     $dbh->do(q{INSERT INTO member (id, name) VALUES (1, "John")}) or die $dbh->errstr;
     $dbh->do(q{INSERT INTO member (id, name) VALUES (2, "Ben")}) or die $dbh->errstr;
     return $dbh;
@@ -45,6 +45,11 @@ subtest 'STORE' => sub {
 subtest 'can_ok' => sub {
     my $dbh = create_dbh();
     can_ok($dbh, qw(table_info));
+};
+subtest 'last_insert_rowid' => sub {
+    my $dbh = create_dbh();
+    $dbh->do(q{INSERT INTO member (name) VALUES ("Gyan")}) or die $dbh->errstr;
+    is($dbh->func('last_insert_rowid'), 3);
 };
 
 done_testing;
