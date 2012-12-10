@@ -3,7 +3,7 @@ use strict;
 
 package DBD::PassThrough;
 use 5.008005;
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 {
     package DBD::PassThrough;
@@ -76,6 +76,14 @@ our $VERSION = '0.01';
         }
         return $dbh->set_err($DBI::stderr, "Can't fetch \$dbh->{$attrib} before connect with DBD::PassThrough");
     }
+    
+    # do not disconnect parent handle.
+    sub disconnect {
+        my $dbh = shift;
+        delete $dbh->{pass_through_source};
+        return 1;
+    }
+
     # Generate methods
     for my $meth (qw(prepare table_info get_info type_info_all type_info column_info primary_key_info primary_key foreign_key_info tables quote quote_identifier)) {
         no strict 'refs';
